@@ -8,7 +8,7 @@ This is an Auto Splitter for [Beton Brutal](https://store.steampowered.com/app/2
 
 1. Download [LiveSplit](https://livesplit.org/downloads/) and extract it somewhere (Ex:`C:\Program Files (x86)`)
 2. Download [the files in this repository](https://github.com/CubeSkyy/BetonBrutalAutoSplitter/releases) and extract them inside the LiveSplit installation folder (Ex:`C:\Program Files (x86)\LiveSplit`)
-3. Open LiveSplit
+3. Open LiveSplit (`C:\Program Files (x86)\LiveSplit\LiveSplit.exe`)
 4. Right-click the timer that just opened,, press `Open Splits` -> `From File...` and choose a category from the files you just downloaded (Ex: `BETON BRUTAL - any%.lss`)
 ![Step4](https://user-images.githubusercontent.com/16226383/233817875-173e54df-4e9b-46b9-aa73-a879a1b1793f.gif)
 5. Right-click the timer and press `Open Layout` -> `From File...` and choose the layout you just downloaded (`Beton Brutal.lsl`). Otherwise, you can use your own, but you need to add the `Scriptable Auto Splitter` component under `Control` in the Layout Editor.
