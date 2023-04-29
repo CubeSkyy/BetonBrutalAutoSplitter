@@ -17,7 +17,8 @@ state("BetonBrutal") {
 
 startup {
 	// Dummy setting, just an info to the user.
-    settings.Add("Loc", true, "Add your splits in LiveSplit\\BetonBrutalSplits.cfg file. Checking this does nothing"); 
+    settings.Add("Loc", true, "Add your splits in LiveSplit\\BetonBrutalSplits.cfg file. Checking this does nothing");
+	vars.TimerModel = new TimerModel { CurrentState = timer };
 }
 
 init {
@@ -73,4 +74,9 @@ reset {
 
 onReset {
 	vars.current_split = 0;
+}
+
+exit {
+	if (settings.ResetEnabled)
+        vars.TimerModel.Reset();
 }
