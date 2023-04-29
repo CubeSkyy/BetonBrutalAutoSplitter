@@ -4,6 +4,9 @@ state("BetonBrutal") {
 
 startup
 {
+	// Dummy setting, just an info to the user.
+    settings.Add("Loc", true, "Add your splits in LiveSplit\\BetonBrutalSplits.cfg file. Checking this does nothing");
+
     Assembly.Load(File.ReadAllBytes("Components/asl-help")).CreateInstance("Unity");
     vars.Helper.GameName = "Beton Brutal";
 
@@ -14,7 +17,7 @@ startup
 
 onStart
 {
-	vars.current_split_index = 0;
+	vars.CustomSplitIndex = 0;
 
     vars.Heights.Clear();
 
