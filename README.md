@@ -4,6 +4,7 @@
 
 This is an Auto Splitter for [Beton Brutal](https://store.steampowered.com/app/2330500/BETON_BRUTAL/). It is a [LiveSplit](https://livesplit.org/downloads/) plugin that reads the in-game memory to determine when to split/reset.
 
+Note: If you are using the latest version, the in-game time should always match the timer in LiveSplit. However, in the Scout beta, the timer will be independent from the IGT since this one uses seconds internally. For scout%, splitter will only start/reset the timer and not match the IGT in this case.
 ## Setup
 
 1. Download [LiveSplit](https://livesplit.org/downloads/) and extract it somewhere (Ex:`C:\Program Files (x86)`)
