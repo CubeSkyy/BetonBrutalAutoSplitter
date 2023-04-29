@@ -1,82 +1,111 @@
-//  This splitter uses a separate split file "BetonBrutalSplits.cfg" that needs to be inside LiveSplit folder.
-//  For more informmation on how to use it read this: https://github.com/CubeSkyy/BetonBrutalAutoSplitter#defining-split-times
-//
-//  Beton Brutal Discord: 
-//	Autosplitter created by CubeSky
-
 state("BetonBrutal") {
-	int run_count : "UnityPlayer.dll", 0x01C665F8, 0xD0, 0x8, 0xE0, 0x28, 0x110, 0x28, 0x60;
-	int height : "UnityPlayer.dll", 0x01C18E48, 0x48, 0x828, 0x30, 0x28, 0x50, 0x88, 0x64;
-	// 1 if a Menu is on screen, 0 if player in game. used for starting along with time and height
-	int menu_active : "UnityPlayer.dll", 0x01C806D0, 0x10, 0xB8, 0x10, 0x10, 0x10, 0x0, 0x544;
-	int current_time : "UnityPlayer.dll", 0x01C18E48, 0x48, 0x828, 0x30, 0x28, 0x50, 0x88, 0x7C;
-	// New version uses floats as the InGame Timer. Keeping both for now
-	float current_time_ms : "UnityPlayer.dll", 0x01C80640, 0xC40, 0x5F8, 0x30, 0x48, 0x28, 0x50, 0x7C;
-	int did_run_end : "UnityPlayer.dll", 0x01C81F78, 0xA78, 0xD0, 0x8, 0xE0, 0x28, 0x118, 0x5C;
+		string60 version : "UnityPlayer.dll", 0x01C18E20, 0x468, 0x18, 0x0, 0x0, 0x10, 0x18, 0x380;
 }
 
-startup {
-	// Dummy setting, just an info to the user.
-    settings.Add("Loc", true, "Add your splits in LiveSplit\\BetonBrutalSplits.cfg file. Checking this does nothing");
-	vars.TimerModel = new TimerModel { CurrentState = timer };
+startup
+{
+    Assembly.Load(File.ReadAllBytes("Components/asl-help")).CreateInstance("Unity");
+    vars.Helper.GameName = "Beton Brutal";
+
+    vars.Heights = new List<int>();
+
+    vars.Helper.AlertGameTime();
 }
 
-init {
-    // Read splits file and initialize internal split list
-    vars.split_file_path =  Directory.GetCurrentDirectory().ToString() + "\\BetonBrutalSplits.cfg";
-    List<int> integers = new List<int>();
-    StreamReader reader = new StreamReader(vars.split_file_path);
-    while (!reader.EndOfStream) {
-        string line = reader.ReadLine();
-        string[] tokens = line.Split(',');
-        foreach (string token in tokens) {
-            int integer = Convert.ToInt32(token.Trim());
-            integers.Add(integer);
+onStart
+{
+	vars.current_split_index = 0;
+
+    vars.Heights.Clear();
+
+    using (var cfg = new StreamReader("BetonBrutalSplits.cfg"))
+    {
+        string line;
+        while ((line = cfg.ReadLine()) != null)
+        {
+            foreach (var height in line.Split(',')){
+                vars.Heights.Add(int.Parse(height.Trim()));
+				}
         }
     }
-    vars.split_list = integers;
-    vars.current_split = 0;
-	vars.run_ended = false;
+
+    // If user did not include 500m in their split file, add it automatically.
+	
+    if (vars.Heights[vars.Heights.Count - 1] != 500)
+        vars.Heights.Add(500);
+	
+	vars.PositiveHeightCount = vars.Heights.FindAll(new Predicate<int>(height => height > 0)).Count;
 }
 
-start {
-    if ((old.menu_active == 1) && (current.menu_active == 0) && ((current.current_time == 0) || (current.current_time_ms < 1.0)) && (current.height == 0)) {
-		vars.run_ended = false;
-	    return true;
-    }
+init
+{
+	vars.IsScoutVersion = current.version.Contains("Scout");
+
+	vars.Helper.TryLoad = (Func<dynamic, bool>)(mono =>
+    {
+        var gui = mono["GameUI"];
+        vars.Helper["Runs"] = mono.Make<int>(gui, "Instance", "stats", "numRuns");
+        vars.Helper["Height"] = mono.Make<int>(gui, "Instance", "stats", "currentHeight");
+		vars.Helper["Time"] = mono.Make<float>(gui, "Instance", "stats", "currentTime");
+		
+		if (vars.IsScoutVersion) 
+			vars.Helper["ActiveScreen"] = mono.Make<IntPtr>(gui, "Instance", "activeScreen");
+		else 
+			vars.Helper["ActiveScreen"] = mono.Make<IntPtr>(gui, "Instance", "ActiveScreen");
+			
+        // 0:LogoScreen (When game starts), 1:MainScreen , 2:PlayingScreen
+        vars.Screens = vars.Helper.ReadList<IntPtr>(gui.Static + gui["Instance"], gui["screens"]);
+        return true;
+    });
+	
+	vars.CustomSplitIndex = 0;
+	current.IsPlaying = true;
+}
+
+update
+{
+	current.IsPlaying = current.ActiveScreen == vars.Screens[2];
+}
+
+start
+{
+    return !old.IsPlaying && current.IsPlaying && current.Time <= 0.05 && current.Height == 0;
 }
 
 split
 {
-	if (current.height >= 500 || (current.height >= 498 && current.did_run_end == 1)) {
-		vars.current_split = 0;
-		vars.run_ended = true;
-		return true;
+    // Only care about splitting when height increased.
+    if (old.Height >= current.Height)
+        return false;
+
+    // Only consider the configured POSITIVE heights if the current split index is within the range of the list.
+	// Could result in issues if configured splits and the actual split file do not match in length.
+	if (timer.CurrentSplitIndex > vars.PositiveHeightCount)
+		return false;
+
+	//Custom logic to allow negative heights to be used as required checkpoints but without spliting
+	var heightCheck = vars.Heights[vars.CustomSplitIndex];
+	var absHeightCheck = Math.Abs(heightCheck);
+	if (old.Height < absHeightCheck && current.Height >= absHeightCheck || current.Height >= 500){
+		vars.CustomSplitIndex++;
+		return heightCheck > 0;
 	}
-
-    if ((old.height < Math.Abs(vars.split_list[vars.current_split])) && (current.height >= Math.Abs(vars.split_list[vars.current_split])) && vars.current_split <= vars.split_list.Count - 1) {
-        if (vars.split_list[vars.current_split] < 0) {
-            vars.current_split = vars.current_split + 1;
-            return false;
-        }else{
-            vars.current_split = vars.current_split + 1;
-            return true;
-        }
-    }
 }
 
-reset {
-    if(((old.menu_active == 0) && (current.menu_active == 1) && (vars.run_ended)) || (current.run_count > old.run_count)) {
-    	vars.current_split = 0;
-	    return true;
-    }
+reset
+{
+    // Reset when user restarts the run.
+    return old.Runs < current.Runs;
 }
 
-onReset {
-	vars.current_split = 0;
+gameTime
+{	
+	// Since scout version stored in-game time in seconds, we use LiveSplit timer instead if we are in a Scout Version
+	if (!vars.IsScoutVersion)
+		return TimeSpan.FromSeconds(current.Time);
 }
 
-exit {
-	if (settings.ResetEnabled)
-        vars.TimerModel.Reset();
+isLoading
+{
+    return !vars.IsScoutVersion;
 }
