@@ -4,6 +4,7 @@
 
 This is an Auto Splitter for [Beton Brutal](https://store.steampowered.com/app/2330500/BETON_BRUTAL/). It is a [LiveSplit](https://livesplit.org/downloads/) plugin that reads the in-game memory to determine when to split/reset.
 
+**WARNING: After game updates, the memory addresses might stop working and need to manually be updated.**
 ## Setup
 
 1. Download [LiveSplit](https://livesplit.org/downloads/) and extract it somewhere (Ex:`C:\Program Files (x86)`)
